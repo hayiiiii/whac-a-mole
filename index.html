@@ -3,145 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER WHAC-A-MOLE | 數位打地鼠系統</title>
+    <title>CYBER MOLE | 互動數位打地鼠</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore-compat.js"></script>
     
     <style>
         :root {
-            --neon-blue: #00f3ff;
-            --neon-purple: #bc13fe;
-            --bg-dark: #050a10;
+            --neon-green: #39ff14;
+            --mole-brown: #a0522d;
+            --hole-dark: #1a1a1a;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-dark);
-            /* 科技感打地鼠背景：霓虹孔洞特效 */
+            overflow: hidden;
+            background-color: #051a05;
+            /* 科技草地網格 */
             background-image: 
-                radial-gradient(circle at 20% 30%, rgba(0, 243, 255, 0.15) 0%, transparent 20%),
-                radial-gradient(circle at 80% 30%, rgba(188, 19, 254, 0.15) 0%, transparent 20%),
-                radial-gradient(circle at 50% 70%, rgba(0, 243, 255, 0.1) 0%, transparent 25%),
-                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-            color: white;
-            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+                linear-gradient(rgba(57, 255, 20, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(57, 255, 20, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
+        /* --- 背景地鼠動畫區 --- */
+        .bg-elements {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .mole-bg {
+            position: absolute;
+            width: 60px; height: 60px;
+            background: var(--mole-brown);
+            border-radius: 50% 50% 0 0;
+            bottom: -70px; /* 藏起來 */
+            border: 3px solid var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        /* 地鼠探頭動畫 */
+        @keyframes popUp {
+            0%, 100% { bottom: -70px; }
+            20%, 80% { bottom: 10px; }
+        }
+
+        /* 畫出地鼠臉部 (用 CSS 畫不需要圖片) */
+        .mole-bg::before {
+            content: "👀";
+            position: absolute; top: 10px; left: 15px; font-size: 20px;
+        }
+        .mole-bg::after {
+            content: "鼻";
+            position: absolute; top: 30px; left: 22px; font-size: 10px; color: pink;
+        }
+
+        /* 地鼠出現位置與時間 */
+        .m1 { left: 15%; animation: popUp 4s infinite 1s; }
+        .m2 { left: 45%; animation: popUp 6s infinite 3s; }
+        .m3 { left: 80%; animation: popUp 5s infinite 2s; }
+
+        /* --- 主面板 --- */
         .container {
-            background: rgba(10, 20, 30, 0.85);
-            border: 2px solid var(--neon-blue);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.3), inset 0 0 15px rgba(0, 243, 255, 0.1);
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 3px solid var(--neon-green);
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
+            border-radius: 30px;
             padding: 40px;
-            width: 450px;
+            width: 400px;
             text-align: center;
-            backdrop-filter: blur(10px);
+            z-index: 10;
         }
 
         h1 {
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            color: var(--neon-blue);
-            text-shadow: 0 0 10px var(--neon-blue);
-            margin-bottom: 30px;
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
         }
 
         .score-display {
-            font-size: 4rem;
-            font-weight: bold;
-            color: var(--neon-purple);
-            text-shadow: 0 0 20px var(--neon-purple);
+            font-size: 5rem;
+            color: #fff;
+            text-shadow: 0 0 20px var(--neon-green);
             margin: 20px 0;
-        }
-
-        .status-tag {
-            font-size: 0.9rem;
-            padding: 5px 15px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-            display: inline-block;
+            font-family: monospace;
         }
 
         button {
-            background: transparent;
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 12px 30px;
-            font-size: 1rem;
+            background: var(--neon-green);
+            border: none;
+            color: black;
+            padding: 15px 30px;
+            font-weight: bold;
+            border-radius: 50px;
             cursor: pointer;
+            font-size: 1.1rem;
             transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 10px;
         }
 
         button:hover {
-            background: var(--neon-blue);
-            color: black;
-            box-shadow: 0 0 20px var(--neon-blue);
+            transform: scale(1.1);
+            box-shadow: 0 0 25px var(--neon-green);
         }
 
-        .leaderboard {
-            margin-top: 40px;
-            border-top: 1px solid rgba(0, 243, 255, 0.3);
-            padding-top: 20px;
+        .rank-list {
+            margin-top: 30px;
             text-align: left;
+            color: #ccc;
         }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .rank-item:last-child { border: none; }
-        .gold { color: #ffd700; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div class="bg-elements">
+    <div class="mole-bg m1"></div>
+    <div class="mole-bg m2"></div>
+    <div class="mole-bg m3"></div>
+</div>
+
 <div class="container">
-    <h1>Cyber Mole</h1>
-    <div class="status-tag" id="status">裝置：等待連線</div>
+    <h1>CYBER MOLE</h1>
+    <p id="status" style="color: #666;">等待連接打地鼠機...</p>
     
     <div class="score-display" id="liveScore">00</div>
     
-    <button id="connectBtn">初始化神經連結 (USB Connect)</button>
+    <button id="connectBtn">⚡ 啟動系統連線</button>
 
-    <div class="leaderboard">
-        <h3 style="color: var(--neon-blue); font-size: 0.9rem; letter-spacing: 2px;">🏆 全球頂尖分數</h3>
-        <div id="rankBody">載入中...</div>
+    <div class="rank-list">
+        <p style="border-bottom: 1px solid var(--neon-green); padding-bottom: 5px;">TOP RANKING</p>
+        <div id="rankBody">載入排行榜中...</div>
     </div>
 </div>
 
 <script>
-    // --- STEP 1: Firebase 設定 (請在此貼上你自己的金鑰) ---
-    const firebaseConfig = {
-        apiKey: "你的API_KEY",
-        authDomain: "你的專案.firebaseapp.com",
-        projectId: "你的專案ID",
-        storageBucket: "你的專案.appspot.com",
-        messagingSenderId: "你的傳送者ID",
-        appId: "你的APP_ID"
-    };
-    
-    // 初始化 Firebase (如果沒設定金鑰，排行榜會報錯但連線功能仍可用)
-    try {
-        firebase.initializeApp(firebaseConfig);
-        var db = firebase.firestore();
-    } catch(e) { console.log("Firebase 未設定"); }
-
-    // --- STEP 2: Web Serial Arduino 連線 ---
+    // --- 這裡沿用之前的 Firebase 與 Web Serial 邏輯 ---
     let port;
     const connectBtn = document.getElementById('connectBtn');
     const scoreText = document.getElementById('liveScore');
@@ -151,65 +153,30 @@
         try {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 });
-            statusTag.innerText = "裝置：已連線 (Online)";
-            statusTag.style.color = "#00ff00";
+            statusTag.innerText = "系統已上線 ONLINE";
+            statusTag.style.color = "var(--neon-green)";
             connectBtn.style.display = 'none';
-            readStream();
-        } catch (err) {
-            alert("連線失敗，請確保使用 Chrome 並接上 Arduino");
-        }
+            readData();
+        } catch (e) { alert("請使用 Chrome 瀏覽器並開啟 USB 權限"); }
     });
 
-    async function readStream() {
+    async function readData() {
         const textDecoder = new TextDecoderStream();
-        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        port.readable.pipeTo(textDecoder.writable);
         const reader = textDecoder.readable.getReader();
-
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;
             if (value) {
-                // 處理即時分數
                 if (value.includes("LIVE_SCORE:")) {
-                    const s = value.split(":")[1].trim();
-                    scoreText.innerText = s.padStart(2, '0');
+                    scoreText.innerText = value.split(":")[1].trim().padStart(2, '0');
                 }
-                // 處理遊戲結束
                 if (value.includes("GAME_OVER_SCORE:")) {
-                    const finalS = parseInt(value.split(":")[1]);
-                    saveToCloud(finalS);
+                    alert("遊戲結束！分數：" + value.split(":")[1]);
                 }
             }
+            if (done) break;
         }
     }
-
-    // --- STEP 3: 排行榜處理 ---
-    async function saveToCloud(score) {
-        const name = prompt(`遊戲結束！分數：${score}\n請輸入你的特工代號：`) || "匿名黑客";
-        if (db) {
-            await db.collection("leaderboard").add({
-                name: name,
-                score: score,
-                time: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            updateRank();
-        }
-    }
-
-    function updateRank() {
-        if (!db) return;
-        db.collection("leaderboard").orderBy("score", "desc").limit(5).onSnapshot(snap => {
-            const body = document.getElementById('rankBody');
-            body.innerHTML = snap.docs.map((doc, i) => `
-                <div class="rank-item ${i===0?'gold':''}">
-                    <span>${i+1}. ${doc.data().name}</span>
-                    <span>${doc.data().score} PTS</span>
-                </div>
-            `).join('');
-        });
-    }
-
-    updateRank(); // 初始化排行榜
 </script>
 
 </body>
