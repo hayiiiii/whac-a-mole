@@ -3,147 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYBER MOLE | 互動數位打地鼠</title>
+    <title>PIXEL MOLE ATTACK! | 像素打地鼠</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore-compat.js"></script>
     
     <style>
-        :root {
-            --neon-green: #39ff14;
-            --mole-brown: #a0522d;
-            --hole-dark: #1a1a1a;
-        }
-
+        /* CSS Reset 和通用樣式 */
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #051a05;
-            /* 科技草地網格 */
-            background-image: 
-                linear-gradient(rgba(57, 255, 20, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(57, 255, 20, 0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            font-family: 'Segoe UI', sans-serif;
+            background-color: #8cbb44; /* 草地綠 */
+            font-family: 'Press Start 2P', cursive; /* 像素字體 */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            image-rendering: pixelated; /* 確保所有圖片和陰影都是像素化的 */
         }
 
-        /* --- 背景地鼠動畫區 --- */
+        /* --- 像素化背景地鼠 --- */
         .bg-elements {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
-            pointer-events: none;
+            pointer-events: none; /* 不會阻擋點擊事件 */
         }
 
-        .mole-bg {
+        .mole-pixel {
             position: absolute;
+            bottom: -80px; /* 藏在地底下 */
             width: 60px; height: 60px;
-            background: var(--mole-brown);
+            transform: scale(2); /* 放大像素，讓細節更清楚 */
+        }
+
+        /* 像素地鼠的 CSS 繪圖 */
+        .mole-pixel::before {
+            content: '';
+            position: absolute;
+            width: 25px; height: 25px;
+            background: #6f4e37; /* 地鼠身體顏色 */
             border-radius: 50% 50% 0 0;
-            bottom: -70px; /* 藏起來 */
-            border: 3px solid var(--neon-green);
-            box-shadow: 0 0 15px var(--neon-green);
+            transform: scaleX(1.2); /* 讓身體更寬 */
+            top: 25px; left: 10px;
+        }
+        .mole-pixel::after {
+            content: '';
+            position: absolute;
+            width: 8px; height: 8px;
+            background: #333; /* 眼睛 */
+            border-radius: 50%;
+            top: 30px; left: 15px;
+            box-shadow: 20px 0 #333; /* 另一隻眼睛 */
+        }
+        .mole-pixel .nose {
+            position: absolute;
+            width: 10px; height: 5px;
+            background: #c28b6d; /* 鼻子 */
+            border-radius: 0 0 5px 5px;
+            top: 40px; left: 24px;
         }
 
         /* 地鼠探頭動畫 */
-        @keyframes popUp {
-            0%, 100% { bottom: -70px; }
-            20%, 80% { bottom: 10px; }
+        @keyframes pixelPopUp {
+            0%, 10% { transform: translateY(0) scale(2); }
+            20%, 80% { transform: translateY(-70px) scale(2); } /* 探頭 */
+            90%, 100% { transform: translateY(0) scale(2); }
         }
 
-        /* 畫出地鼠臉部 (用 CSS 畫不需要圖片) */
-        .mole-bg::before {
-            content: "👀";
-            position: absolute; top: 10px; left: 15px; font-size: 20px;
-        }
-        .mole-bg::after {
-            content: "鼻";
-            position: absolute; top: 30px; left: 22px; font-size: 10px; color: pink;
-        }
+        /* 隨機位置和延遲 */
+        .mole-pixel:nth-child(1) { left: 15%; animation: pixelPopUp 5s infinite 1s; }
+        .mole-pixel:nth-child(2) { left: 45%; animation: pixelPopUp 6s infinite 3s; }
+        .mole-pixel:nth-child(3) { left: 80%; animation: pixelPopUp 4s infinite 2s; }
 
-        /* 地鼠出現位置與時間 */
-        .m1 { left: 15%; animation: popUp 4s infinite 1s; }
-        .m2 { left: 45%; animation: popUp 6s infinite 3s; }
-        .m3 { left: 80%; animation: popUp 5s infinite 2s; }
-
-        /* --- 主面板 --- */
-        .container {
-            background: rgba(0, 0, 0, 0.85);
-            border: 3px solid var(--neon-green);
-            box-shadow: 0 0 30px rgba(57, 255, 20, 0.4);
-            border-radius: 30px;
-            padding: 40px;
-            width: 400px;
+        /* --- 主遊戲面板 --- */
+        .game-panel {
+            background-color: #4a4a4a; /* 面板背景 */
+            border: 8px solid #2e2e2e; /* 像素邊框 */
+            box-shadow: 
+                4px 4px #2e2e2e, /* 陰影營造厚度感 */
+                -4px -4px #2e2e2e;
+            border-radius: 10px;
+            padding: 30px;
+            width: 350px;
             text-align: center;
-            z-index: 10;
+            color: #d4d4d4;
+            letter-spacing: 1px;
+            image-rendering: pixelated;
         }
 
-        h1 {
-            color: var(--neon-green);
-            text-shadow: 0 0 15px var(--neon-green);
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        h1.panel-title {
+            color: #c9e875; /* 標題綠色 */
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px #333; /* 像素陰影 */
         }
 
-        .score-display {
-            font-size: 5rem;
-            color: #fff;
-            text-shadow: 0 0 20px var(--neon-green);
-            margin: 20px 0;
-            font-family: monospace;
-        }
-
-        button {
-            background: var(--neon-green);
-            border: none;
-            color: black;
-            padding: 15px 30px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 25px var(--neon-green);
-        }
-
-        .rank-list {
-            margin-top: 30px;
+        .status-line, .score-box {
+            background-color: #2e2e2e;
+            border: 2px solid #666;
+            padding: 8px;
+            margin-bottom: 15px;
+            font-size: 0.8rem;
+            color: #c9e875;
             text-align: left;
-            color: #ccc;
         }
+
+        .score-box {
+            font-size: 2rem;
+            color: #ff0000; /* 分數紅色 */
+            text-align: center;
+            padding: 15px;
+            border: 4px solid #666;
+        }
+
+        button.pixel-btn {
+            background-color: #5cb85c; /* 按鈕綠色 */
+            border: 4px solid #3d793d; /* 邊框深綠 */
+            border-bottom-width: 8px; /* 模擬按壓感 */
+            color: #fff;
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.1s ease-out; /* 快速回彈 */
+            margin-top: 20px;
+            text-shadow: 1px 1px #3d793d;
+        }
+
+        button.pixel-btn:active {
+            border-bottom-width: 4px; /* 按下時縮短邊框 */
+            transform: translateY(4px); /* 按下時下移 */
+        }
+
+        /* 排行榜 */
+        .leaderboard {
+            margin-top: 30px;
+            border-top: 2px solid #666;
+            padding-top: 15px;
+            text-align: left;
+            font-size: 0.7rem;
+            color: #d4d4d4;
+        }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #555; /* 虛線分隔 */
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-item.first-place { color: gold; text-shadow: 1px 1px #ff8c00; } /* 第一名特殊顯示 */
     </style>
 </head>
 <body>
 
 <div class="bg-elements">
-    <div class="mole-bg m1"></div>
-    <div class="mole-bg m2"></div>
-    <div class="mole-bg m3"></div>
+    <div class="mole-pixel m1"><div class="nose"></div></div>
+    <div class="mole-pixel m2"><div class="nose"></div></div>
+    <div class="mole-pixel m3"><div class="nose"></div></div>
 </div>
 
-<div class="container">
-    <h1>CYBER MOLE</h1>
-    <p id="status" style="color: #666;">等待連接打地鼠機...</p>
+<div class="game-panel">
+    <h1 class="panel-title">PIXEL MOLE ATTACK!</h1>
     
-    <div class="score-display" id="liveScore">00</div>
+    <div class="status-line" id="status">狀態: 等待連線</div>
     
-    <button id="connectBtn">⚡ 啟動系統連線</button>
+    <div class="score-box" id="liveScore">00</div>
+    
+    <button class="pixel-btn" id="connectBtn">START</button>
 
-    <div class="rank-list">
-        <p style="border-bottom: 1px solid var(--neon-green); padding-bottom: 5px;">TOP RANKING</p>
-        <div id="rankBody">載入排行榜中...</div>
+    <div class="leaderboard">
+        <h3 style="font-size: 0.8rem; color: #c9e875; margin-bottom: 10px;">HIGH SCORES</h3>
+        <div id="rankBody">LOADING...</div>
     </div>
 </div>
 
 <script>
-    // --- 這裡沿用之前的 Firebase 與 Web Serial 邏輯 ---
+    // --- STEP 1: Firebase 設定 (請在此貼上你自己的金鑰) ---
+    const firebaseConfig = {
+        apiKey: "你的API_KEY",
+        authDomain: "你的專案.firebaseapp.com",
+        projectId: "你的專案ID",
+        storageBucket: "你的專案.appspot.com",
+        messagingSenderId: "你的傳送者ID",
+        appId: "你的APP_ID"
+    };
+    
+    // 初始化 Firebase (如果沒設定金鑰，排行榜會報錯但連線功能仍可用)
+    try {
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+    } catch(e) { console.log("Firebase 未設定或初始化失敗:", e); }
+
+    // --- STEP 2: Web Serial Arduino 連線 ---
     let port;
     const connectBtn = document.getElementById('connectBtn');
     const scoreText = document.getElementById('liveScore');
@@ -151,32 +205,75 @@
 
     connectBtn.addEventListener('click', async () => {
         try {
+            statusTag.innerText = "狀態: 連線中...";
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 });
-            statusTag.innerText = "系統已上線 ONLINE";
-            statusTag.style.color = "var(--neon-green)";
-            connectBtn.style.display = 'none';
-            readData();
-        } catch (e) { alert("請使用 Chrome 瀏覽器並開啟 USB 權限"); }
+            statusTag.innerText = "狀態: 已連線 (ONLINE)";
+            connectBtn.style.display = 'none'; // 連線成功後隱藏按鈕
+            readStream();
+        } catch (err) {
+            statusTag.innerText = "狀態: 連線失敗";
+            alert("連線失敗，請確保使用 Chrome/Edge 瀏覽器並接上 Arduino！");
+            console.error("Web Serial connection error:", err);
+        }
     });
 
-    async function readData() {
+    async function readStream() {
         const textDecoder = new TextDecoderStream();
-        port.readable.pipeTo(textDecoder.writable);
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
         const reader = textDecoder.readable.getReader();
+
         while (true) {
             const { value, done } = await reader.read();
+            if (done) break;
             if (value) {
+                // 處理即時分數
                 if (value.includes("LIVE_SCORE:")) {
-                    scoreText.innerText = value.split(":")[1].trim().padStart(2, '0');
+                    const s = value.split(":")[1].trim();
+                    scoreText.innerText = s.padStart(2, '0');
                 }
+                // 處理遊戲結束
                 if (value.includes("GAME_OVER_SCORE:")) {
-                    alert("遊戲結束！分數：" + value.split(":")[1]);
+                    const finalS = parseInt(value.split(":")[1]);
+                    saveToCloud(finalS);
                 }
             }
-            if (done) break;
         }
     }
+
+    // --- STEP 3: 排行榜處理 ---
+    async function saveToCloud(score) {
+        const name = prompt(`遊戲結束！你的分數是 ${score}\n請輸入你的電玩代號：`) || "匿名玩家";
+        if (db) {
+            await db.collection("leaderboard").add({
+                name: name,
+                score: score,
+                time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            updateRank();
+        } else {
+            console.warn("Firebase 未初始化，無法儲存分數。");
+            alert("Firebase 資料庫未啟用，分數無法儲存。");
+        }
+    }
+
+    function updateRank() {
+        if (!db) {
+            document.getElementById('rankBody').innerHTML = '資料庫未連線';
+            return;
+        }
+        db.collection("leaderboard").orderBy("score", "desc").limit(5).onSnapshot(snap => {
+            const body = document.getElementById('rankBody');
+            body.innerHTML = snap.docs.map((doc, i) => `
+                <div class="rank-item ${i===0?'first-place':''}">
+                    <span>${i+1}. ${doc.data().name}</span>
+                    <span>${doc.data().score} PTS</span>
+                </div>
+            `).join('');
+        });
+    }
+
+    updateRank(); // 初始化排行榜
 </script>
 
 </body>
