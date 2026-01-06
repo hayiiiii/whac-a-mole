@@ -3,277 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIXEL MOLE ATTACK! | 像素打地鼠</title>
-    
+    <title>PIXEL MOLE 9-GRID | 像素九宮格</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore-compat.js"></script>
     
     <style>
-        /* CSS Reset 和通用樣式 */
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            overflow: hidden;
-            background-color: #8cbb44; /* 草地綠 */
-            font-family: 'Press Start 2P', cursive; /* 像素字體 */
+            padding: 0;
+            background-color: #5d8a31; /* 像素草地綠 */
+            font-family: 'Press Start 2P', cursive;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            image-rendering: pixelated; /* 確保所有圖片和陰影都是像素化的 */
-        }
-
-        /* --- 像素化背景地鼠 --- */
-        .bg-elements {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-            pointer-events: none; /* 不會阻擋點擊事件 */
-        }
-
-        .mole-pixel {
-            position: absolute;
-            bottom: -80px; /* 藏在地底下 */
-            width: 60px; height: 60px;
-            transform: scale(2); /* 放大像素，讓細節更清楚 */
-        }
-
-        /* 像素地鼠的 CSS 繪圖 */
-        .mole-pixel::before {
-            content: '';
-            position: absolute;
-            width: 25px; height: 25px;
-            background: #6f4e37; /* 地鼠身體顏色 */
-            border-radius: 50% 50% 0 0;
-            transform: scaleX(1.2); /* 讓身體更寬 */
-            top: 25px; left: 10px;
-        }
-        .mole-pixel::after {
-            content: '';
-            position: absolute;
-            width: 8px; height: 8px;
-            background: #333; /* 眼睛 */
-            border-radius: 50%;
-            top: 30px; left: 15px;
-            box-shadow: 20px 0 #333; /* 另一隻眼睛 */
-        }
-        .mole-pixel .nose {
-            position: absolute;
-            width: 10px; height: 5px;
-            background: #c28b6d; /* 鼻子 */
-            border-radius: 0 0 5px 5px;
-            top: 40px; left: 24px;
-        }
-
-        /* 地鼠探頭動畫 */
-        @keyframes pixelPopUp {
-            0%, 10% { transform: translateY(0) scale(2); }
-            20%, 80% { transform: translateY(-70px) scale(2); } /* 探頭 */
-            90%, 100% { transform: translateY(0) scale(2); }
-        }
-
-        /* 隨機位置和延遲 */
-        .mole-pixel:nth-child(1) { left: 15%; animation: pixelPopUp 5s infinite 1s; }
-        .mole-pixel:nth-child(2) { left: 45%; animation: pixelPopUp 6s infinite 3s; }
-        .mole-pixel:nth-child(3) { left: 80%; animation: pixelPopUp 4s infinite 2s; }
-
-        /* --- 主遊戲面板 --- */
-        .game-panel {
-            background-color: #4a4a4a; /* 面板背景 */
-            border: 8px solid #2e2e2e; /* 像素邊框 */
-            box-shadow: 
-                4px 4px #2e2e2e, /* 陰影營造厚度感 */
-                -4px -4px #2e2e2e;
-            border-radius: 10px;
-            padding: 30px;
-            width: 350px;
-            text-align: center;
-            color: #d4d4d4;
-            letter-spacing: 1px;
+            overflow: hidden;
             image-rendering: pixelated;
         }
 
-        h1.panel-title {
-            color: #c9e875; /* 標題綠色 */
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px #333; /* 像素陰影 */
+        /* --- 背景九宮格系統 --- */
+        .mole-grid {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3列 */
+            grid-template-rows: repeat(3, 1fr);    /* 3行 */
+            z-index: 1;
         }
 
-        .status-line, .score-box {
-            background-color: #2e2e2e;
-            border: 2px solid #666;
-            padding: 8px;
-            margin-bottom: 15px;
-            font-size: 0.8rem;
-            color: #c9e875;
-            text-align: left;
-        }
-
-        .score-box {
-            font-size: 2rem;
-            color: #ff0000; /* 分數紅色 */
-            text-align: center;
-            padding: 15px;
-            border: 4px solid #666;
-        }
-
-        button.pixel-btn {
-            background-color: #5cb85c; /* 按鈕綠色 */
-            border: 4px solid #3d793d; /* 邊框深綠 */
-            border-bottom-width: 8px; /* 模擬按壓感 */
-            color: #fff;
-            padding: 10px 20px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.1s ease-out; /* 快速回彈 */
-            margin-top: 20px;
-            text-shadow: 1px 1px #3d793d;
-        }
-
-        button.pixel-btn:active {
-            border-bottom-width: 4px; /* 按下時縮短邊框 */
-            transform: translateY(4px); /* 按下時下移 */
-        }
-
-        /* 排行榜 */
-        .leaderboard {
-            margin-top: 30px;
-            border-top: 2px solid #666;
-            padding-top: 15px;
-            text-align: left;
-            font-size: 0.7rem;
-            color: #d4d4d4;
-        }
-        .rank-item {
+        .hole-container {
+            position: relative;
             display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px dashed #555; /* 虛線分隔 */
+            justify-content: center;
+            align-items: center;
         }
-        .rank-item:last-child { border-bottom: none; }
-        .rank-item.first-place { color: gold; text-shadow: 1px 1px #ff8c00; } /* 第一名特殊顯示 */
+
+        /* 像素洞口 */
+        .pixel-hole {
+            width: 120px; height: 40px;
+            background: #2e2e2e;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 20%;
+            box-shadow: inset 0 10px 0 #000;
+        }
+
+        /* 像素地鼠本體 */
+        .pixel-mole {
+            width: 80px; height: 80px;
+            position: absolute;
+            bottom: 25%;
+            transform: translateY(120%); /* 預設藏起來 */
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        /* 繪製像素地鼠 (CSS繪圖) */
+        .mole-body {
+            width: 60px; height: 70px;
+            background: #6f4e37;
+            border: 4px solid #000;
+            border-radius: 30px 30px 0 0;
+            margin: 0 auto;
+            position: relative;
+        }
+        .mole-body::before { /* 眼睛 */
+            content: ''; position: absolute;
+            width: 8px; height: 8px; background: #000;
+            top: 20px; left: 12px; box-shadow: 24px 0 #000;
+        }
+
+        /* 探頭動畫標籤 */
+        .is-active { transform: translateY(0); }
+
+        /* --- 操作面板 --- */
+        .ui-panel {
+            position: relative;
+            z-index: 10;
+            background: rgba(40, 40, 40, 0.9);
+            border: 6px solid #000;
+            padding: 30px;
+            text-align: center;
+            color: #fff;
+            width: 380px;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+        }
+
+        .score-val {
+            font-size: 3rem;
+            color: #ff0000;
+            margin: 20px 0;
+            text-shadow: 3px 3px #000;
+        }
+
+        button {
+            background: #f8e71c;
+            border: 4px solid #b3a414;
+            border-bottom-width: 8px;
+            padding: 15px;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:active { border-bottom-width: 4px; transform: translateY(4px); }
+
+        .status { font-size: 0.6rem; color: #00ff00; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div class="bg-elements">
-    <div class="mole-pixel m1"><div class="nose"></div></div>
-    <div class="mole-pixel m2"><div class="nose"></div></div>
-    <div class="mole-pixel m3"><div class="nose"></div></div>
+<div class="mole-grid" id="moleGrid">
+    <script>
+        for(let i=0; i<9; i++) {
+            document.write(`
+                <div class="hole-container">
+                    <div class="pixel-hole"></div>
+                    <div class="pixel-mole" id="mole-${i}">
+                        <div class="mole-body"></div>
+                    </div>
+                </div>
+            `);
+        }
+    </script>
 </div>
 
-<div class="game-panel">
-    <h1 class="panel-title">PIXEL MOLE ATTACK!</h1>
-    
-    <div class="status-line" id="status">狀態: 等待連線</div>
-    
-    <div class="score-box" id="liveScore">00</div>
-    
-    <button class="pixel-btn" id="connectBtn">START</button>
-
-    <div class="leaderboard">
-        <h3 style="font-size: 0.8rem; color: #c9e875; margin-bottom: 10px;">HIGH SCORES</h3>
-        <div id="rankBody">LOADING...</div>
-    </div>
+<div class="ui-panel">
+    <div class="status" id="status">WAITING FOR ARDUINO...</div>
+    <div style="font-size: 0.8rem;">SCORE</div>
+    <div class="score-val" id="liveScore">00</div>
+    <button id="connectBtn">START SYSTEM</button>
 </div>
 
 <script>
-    // --- STEP 1: Firebase 設定 (請在此貼上你自己的金鑰) ---
-    const firebaseConfig = {
-        apiKey: "你的API_KEY",
-        authDomain: "你的專案.firebaseapp.com",
-        projectId: "你的專案ID",
-        storageBucket: "你的專案.appspot.com",
-        messagingSenderId: "你的傳送者ID",
-        appId: "你的APP_ID"
-    };
-    
-    // 初始化 Firebase (如果沒設定金鑰，排行榜會報錯但連線功能仍可用)
-    try {
-        firebase.initializeApp(firebaseConfig);
-        var db = firebase.firestore();
-    } catch(e) { console.log("Firebase 未設定或初始化失敗:", e); }
+    // --- 隨機地鼠冒險動畫 ---
+    function randomPop() {
+        const moles = document.querySelectorAll('.pixel-mole');
+        moles.forEach(m => m.classList.remove('is-active')); // 先全部縮下去
+        
+        const randomIndex = Math.floor(Math.random() * 9);
+        moles[randomIndex].classList.add('is-active'); // 隨機選一個升起來
+        
+        setTimeout(randomPop, 1500 + Math.random() * 2000); // 隨機時間後下一隻
+    }
+    randomPop(); // 啟動背景動畫
 
-    // --- STEP 2: Web Serial Arduino 連線 ---
+    // --- Web Serial 連線邏輯 ---
     let port;
     const connectBtn = document.getElementById('connectBtn');
     const scoreText = document.getElementById('liveScore');
-    const statusTag = document.getElementById('status');
 
     connectBtn.addEventListener('click', async () => {
         try {
-            statusTag.innerText = "狀態: 連線中...";
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 });
-            statusTag.innerText = "狀態: 已連線 (ONLINE)";
-            connectBtn.style.display = 'none'; // 連線成功後隱藏按鈕
-            readStream();
-        } catch (err) {
-            statusTag.innerText = "狀態: 連線失敗";
-            alert("連線失敗，請確保使用 Chrome/Edge 瀏覽器並接上 Arduino！");
-            console.error("Web Serial connection error:", err);
-        }
+            document.getElementById('status').innerText = "SYSTEM ONLINE";
+            connectBtn.style.display = 'none';
+            readData();
+        } catch (e) { alert("連線失敗！"); }
     });
 
-    async function readStream() {
+    async function readData() {
         const textDecoder = new TextDecoderStream();
-        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        port.readable.pipeTo(textDecoder.writable);
         const reader = textDecoder.readable.getReader();
-
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;
-            if (value) {
-                // 處理即時分數
-                if (value.includes("LIVE_SCORE:")) {
-                    const s = value.split(":")[1].trim();
-                    scoreText.innerText = s.padStart(2, '0');
-                }
-                // 處理遊戲結束
-                if (value.includes("GAME_OVER_SCORE:")) {
-                    const finalS = parseInt(value.split(":")[1]);
-                    saveToCloud(finalS);
-                }
+            if (value && value.includes("LIVE_SCORE:")) {
+                scoreText.innerText = value.split(":")[1].trim().padStart(2, '0');
             }
+            if (done) break;
         }
     }
-
-    // --- STEP 3: 排行榜處理 ---
-    async function saveToCloud(score) {
-        const name = prompt(`遊戲結束！你的分數是 ${score}\n請輸入你的電玩代號：`) || "匿名玩家";
-        if (db) {
-            await db.collection("leaderboard").add({
-                name: name,
-                score: score,
-                time: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            updateRank();
-        } else {
-            console.warn("Firebase 未初始化，無法儲存分數。");
-            alert("Firebase 資料庫未啟用，分數無法儲存。");
-        }
-    }
-
-    function updateRank() {
-        if (!db) {
-            document.getElementById('rankBody').innerHTML = '資料庫未連線';
-            return;
-        }
-        db.collection("leaderboard").orderBy("score", "desc").limit(5).onSnapshot(snap => {
-            const body = document.getElementById('rankBody');
-            body.innerHTML = snap.docs.map((doc, i) => `
-                <div class="rank-item ${i===0?'first-place':''}">
-                    <span>${i+1}. ${doc.data().name}</span>
-                    <span>${doc.data().score} PTS</span>
-                </div>
-            `).join('');
-        });
-    }
-
-    updateRank(); // 初始化排行榜
 </script>
 
 </body>
