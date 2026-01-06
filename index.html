@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIXEL MOLE 9-GRID | 像素九宮格</title>
+    <title>PIXEL ADVENTURE | 像素地鼠大冒險</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore-compat.js"></script>
@@ -11,9 +11,14 @@
     <style>
         * { box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #5d8a31; /* 像素草地綠 */
+            margin: 0; padding: 0;
+            background-color: #71aa34; /* 較深色草地綠 */
+            /* 像素裝飾：利用多重陰影畫出像素草與花 */
+            background-image: 
+                radial-gradient(#ffffff 2px, transparent 2px), 
+                radial-gradient(#ffcc00 2px, transparent 2px);
+            background-size: 100px 100px, 150px 150px;
+            background-position: 10px 10px, 50px 50px;
             font-family: 'Press Start 2P', cursive;
             height: 100vh;
             display: flex;
@@ -23,14 +28,28 @@
             image-rendering: pixelated;
         }
 
-        /* --- 背景九宮格系統 --- */
+        /* --- 豐富的像素背景裝飾 --- */
+        body::before {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            /* 繪製隨機像素草叢 */
+            box-shadow: 
+                20vw 10vh #5a8a2a, 80vw 15vh #5a8a2a, 40vw 80vh #5a8a2a, 
+                10vw 60vh #5a8a2a, 90vw 70vh #5a8a2a, 60vw 20vh #5a8a2a,
+                /* 加入一些像素小花點綴 */
+                25vw 35vh #ff5555, 75vw 65vh #ff5555, 15vw 85vh #ff5555;
+            width: 8px; height: 8px;
+        }
+
+        /* --- 九宮格系統 --- */
         .mole-grid {
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3列 */
-            grid-template-rows: repeat(3, 1fr);    /* 3行 */
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
             z-index: 1;
         }
 
@@ -39,82 +58,92 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* 關鍵：地鼠縮下去時會被切掉 */
+            overflow: hidden; 
         }
 
-        /* 像素洞口 */
+        /* 像素洞口 (泥土色) */
         .pixel-hole {
-            width: 120px; height: 40px;
-            background: #2e2e2e;
+            width: 140px; height: 45px;
+            background: #4d3319;
             border-radius: 50%;
             position: absolute;
-            bottom: 20%;
-            box-shadow: inset 0 10px 0 #000;
+            bottom: 15%;
+            border: 4px solid #261a0d;
+            box-shadow: inset 0 8px 0 #000;
         }
 
-        /* 像素地鼠本體 */
+        /* 像素地鼠 */
         .pixel-mole {
-            width: 80px; height: 80px;
+            width: 80px; height: 90px;
             position: absolute;
-            bottom: 25%;
-            transform: translateY(120%); /* 預設藏起來 */
-            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            bottom: 18%;
+            transform: translateY(120%); /* 起始位置完全隱藏在容器外 */
+            transition: transform 0.25s ease-out;
         }
 
-        /* 繪製像素地鼠 (CSS繪圖) */
         .mole-body {
-            width: 60px; height: 70px;
-            background: #6f4e37;
+            width: 64px; height: 80px;
+            background: #a0522d;
             border: 4px solid #000;
-            border-radius: 30px 30px 0 0;
+            border-radius: 32px 32px 0 0;
             margin: 0 auto;
             position: relative;
         }
-        .mole-body::before { /* 眼睛 */
+        
+        /* 地鼠眼睛與紅通通鼻子 */
+        .mole-body::before { 
             content: ''; position: absolute;
             width: 8px; height: 8px; background: #000;
-            top: 20px; left: 12px; box-shadow: 24px 0 #000;
+            top: 20px; left: 12px; box-shadow: 28px 0 #000;
+        }
+        .mole-body::after {
+            content: ''; position: absolute;
+            width: 12px; height: 8px; background: #ff8888;
+            top: 35px; left: 22px; border-radius: 4px;
         }
 
-        /* 探頭動畫標籤 */
-        .is-active { transform: translateY(0); }
+        .is-active { transform: translateY(0); } /* 只有啟動時才浮上來 */
 
-        /* --- 操作面板 --- */
+        /* --- UI 面板 --- */
         .ui-panel {
             position: relative;
             z-index: 10;
-            background: rgba(40, 40, 40, 0.9);
+            background: #333;
             border: 6px solid #000;
-            padding: 30px;
+            padding: 25px;
             text-align: center;
             color: #fff;
-            width: 380px;
-            box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
+            width: 360px;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.4);
         }
 
         .score-val {
             font-size: 3rem;
-            color: #ff0000;
-            margin: 20px 0;
+            color: #ffff00;
+            margin: 15px 0;
             text-shadow: 3px 3px #000;
         }
 
         button {
-            background: #f8e71c;
-            border: 4px solid #b3a414;
+            background: #ff4444;
+            border: 4px solid #880000;
             border-bottom-width: 8px;
-            padding: 15px;
+            color: #fff;
+            padding: 12px;
             font-family: 'Press Start 2P', cursive;
             cursor: pointer;
             width: 100%;
+            font-size: 0.8rem;
         }
         button:active { border-bottom-width: 4px; transform: translateY(4px); }
 
-        .status { font-size: 0.6rem; color: #00ff00; margin-bottom: 10px; }
+        .status { font-size: 0.5rem; color: #aaa; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div class="mole-grid" id="moleGrid">
+<div class="mole-grid">
     <script>
         for(let i=0; i<9; i++) {
             document.write(`
@@ -130,26 +159,32 @@
 </div>
 
 <div class="ui-panel">
-    <div class="status" id="status">WAITING FOR ARDUINO...</div>
-    <div style="font-size: 0.8rem;">SCORE</div>
+    <div class="status" id="status">CONNECT ARDUINO TO START</div>
+    <div style="font-size: 0.7rem; color: #ffcc00;">★ PLAYER SCORE ★</div>
     <div class="score-val" id="liveScore">00</div>
-    <button id="connectBtn">START SYSTEM</button>
+    <button id="connectBtn">SYSTEM CONNECT</button>
 </div>
 
 <script>
-    // --- 隨機地鼠冒險動畫 ---
+    // --- 隨機地鼠出現邏輯 ---
     function randomPop() {
         const moles = document.querySelectorAll('.pixel-mole');
-        moles.forEach(m => m.classList.remove('is-active')); // 先全部縮下去
+        // 先全部消失
+        moles.forEach(m => m.classList.remove('is-active'));
         
+        // 隨機選一個冒出來
         const randomIndex = Math.floor(Math.random() * 9);
-        moles[randomIndex].classList.add('is-active'); // 隨機選一個升起來
+        moles[randomIndex].classList.add('is-active');
         
-        setTimeout(randomPop, 1500 + Math.random() * 2000); // 隨機時間後下一隻
+        // 停留一段時間後縮回去
+        const stayTime = 1000 + Math.random() * 1500;
+        setTimeout(randomPop, stayTime);
     }
-    randomPop(); // 啟動背景動畫
+    
+    // 延遲一點點時間啟動背景動畫
+    setTimeout(randomPop, 1000);
 
-    // --- Web Serial 連線邏輯 ---
+    // --- Arduino 連線邏輯 ---
     let port;
     const connectBtn = document.getElementById('connectBtn');
     const scoreText = document.getElementById('liveScore');
@@ -158,10 +193,11 @@
         try {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 });
-            document.getElementById('status').innerText = "SYSTEM ONLINE";
+            document.getElementById('status').innerText = "SYSTEM READY!";
+            document.getElementById('status').style.color = "#00ff00";
             connectBtn.style.display = 'none';
             readData();
-        } catch (e) { alert("連線失敗！"); }
+        } catch (e) { alert("連線失敗，請使用 Chrome 瀏覽器！"); }
     });
 
     async function readData() {
