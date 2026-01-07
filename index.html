@@ -1,146 +1,10 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PIXEL HOLE | 像素深坑版</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0; padding: 0;
-            background-color: #5d8a31; /* 草地綠 */
-            background-image: 
-                radial-gradient(#4a6d27 15%, transparent 16%),
-                radial-gradient(#ffffff 2px, transparent 2px); /* 點綴花點 */
-            background-size: 60px 60px, 120px 120px;
-            font-family: 'Press Start 2P', cursive;
-            height: 100vh; overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
-            image-rendering: pixelated;
-        }
-
-        /* --- 九宮格 --- */
-        .mole-grid {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            z-index: 1;
-        }
-
-        .hole-container {
-            position: relative;
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        /* --- 洞穴立體構造 --- */
-        .hole-wrapper {
-            position: relative;
-            width: 140px; height: 100px; /* 限制地鼠活動高度 */
-            overflow: hidden; /* 關鍵：超出底部的地鼠會消失 */
-        }
-
-        /* 洞穴背景 (深色內部) */
-        .hole-back {
-            position: absolute; bottom: 0;
-            width: 140px; height: 40px;
-            background: #2b1d0e;
-            border-radius: 50%;
-            border: 4px solid #1a1108;
-            z-index: 1; /* 地鼠在它前面 */
-        }
-
-        /* 洞穴前景 (遮擋地鼠的土壤) */
-        .hole-front {
-            position: absolute; bottom: -5px;
-            width: 150px; height: 30px;
-            background: #71aa34; /* 與草地同色，達成隱蔽 */
-            z-index: 5; /* 關鍵：地鼠在它後面，達成隱藏效果 */
-            border-top: 4px solid #4d3319; /* 洞穴邊緣線 */
-            border-radius: 50% 50% 0 0;
-        }
-
-        /* 像素地鼠 */
-        .pixel-mole {
-            position: absolute;
-            bottom: -80px; /* 初始完全藏在 hole-front 下方 */
-            left: 30px;
-            width: 80px; height: 90px;
-            z-index: 3; /* 夾在 back(1) 和 front(5) 中間 */
-            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-
-        .mole-body {
-            width: 64px; height: 80px;
-            background: #a0522d;
-            border: 4px solid #000;
-            border-radius: 32px 32px 0 0;
-            position: relative;
-        }
-
-        /* 地鼠眼睛與鼻子 */
-        .mole-body::before { 
-            content: ''; position: absolute;
-            width: 8px; height: 8px; background: #000;
-            top: 20px; left: 12px; box-shadow: 28px 0 #000;
-        }
-        .mole-body::after {
-            content: ''; position: absolute;
-            width: 12px; height: 8px; background: #ffaaaa;
-            top: 35px; left: 22px; border-radius: 4px;
-        }
-
-        /* 探頭動作 */
-        .is-active { transform: translateY(-85px); } /* 向上頂出洞穴 */
-
-        /* --- UI 面板 --- */
-        .ui-panel {
-            position: relative; z-index: 100;
-            background: #222; border: 6px solid #fff;
-            padding: 20px; width: 340px; text-align: center; color: #fff;
-            box-shadow: 8px 8px 0 #000;
-        }
-        .score-val { font-size: 3rem; color: #00ff00; margin: 10px 0; }
-        button {
-            background: #fff; border: none; padding: 10px; width: 100%;
-            font-family: 'Press Start 2P', cursive; cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-<div class="mole-grid">
-    <script>
-        for(let i=0; i<9; i++) {
-            document.write(`
-                <div class="hole-container">
-                    <div class="hole-wrapper">
-                        <div class="hole-back"></div>
-                        <div class="pixel-mole" id="mole-${i}">
-                            <div class="mole-body"></div>
-                        </div>
-                        <div class="hole-front"></div>
-                    </div>
-                </div>
-            `);
-        }
-    </script>
-</div>
-
-<div class="ui-panel">
-    <div style="font-size: 0.6rem;">SYSTEM STATUS</div>
-    <div class="score-val" id="liveScore">00</div>
-    <button id="connectBtn">LINK START</button>
-</div>
-
 <script>
-    // 背景地鼠隨機跳動邏輯
+    // --- 背景動畫邏輯 (這部分不用動，維持原樣) ---
     function randomPop() {
         const moles = document.querySelectorAll('.pixel-mole');
         moles.forEach(m => m.classList.remove('is-active'));
         
+        // 隨機讓 1~2 隻地鼠跳起來，當作背景氣氛
         const randomIndex = Math.floor(Math.random() * 9);
         moles[randomIndex].classList.add('is-active');
         
@@ -148,30 +12,76 @@
     }
     setTimeout(randomPop, 1000);
 
-    // Arduino 連線邏輯
+    // --- Arduino 連線邏輯 (升級版) ---
     let port;
+    let reader;
+    
     document.getElementById('connectBtn').addEventListener('click', async () => {
+        // 檢查瀏覽器支援度
+        if (!("serial" in navigator)) {
+            alert("請使用 Chrome 或 Edge 瀏覽器");
+            return;
+        }
+
         try {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 9600 });
-            document.getElementById('connectBtn').style.display = 'none';
+            
+            // UI 更新
+            const btn = document.getElementById('connectBtn');
+            btn.textContent = "CONNECTED";
+            btn.style.background = "#4cd137";
+            btn.style.color = "#000";
+            btn.disabled = true;
+
             readStream();
-        } catch (e) { alert("連線失敗"); }
+        } catch (e) { 
+            console.error(e);
+            alert("連線失敗或取消"); 
+        }
     });
 
     async function readStream() {
         const textDecoder = new TextDecoderStream();
-        port.readable.pipeTo(textDecoder.writable);
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
         const reader = textDecoder.readable.getReader();
+        
+        let buffer = ""; // 暫存區
+
         while (true) {
             const { value, done } = await reader.read();
-            if (value && value.includes("LIVE_SCORE:")) {
-                document.getElementById('liveScore').innerText = value.split(":")[1].trim().padStart(2, '0');
-            }
             if (done) break;
+            
+            if (value) {
+                buffer += value; // 把收到的碎片拼起來
+                
+                // 檢查有沒有換行符號 (代表一句話講完了)
+                let lines = buffer.split('\n');
+                buffer = lines.pop(); // 把最後一句可能不完整的留著，下次拼
+                
+                for (const line of lines) {
+                    processArduinoData(line.trim());
+                }
+            }
+        }
+    }
+
+    // 處理 Arduino 傳來的指令
+    function processArduinoData(data) {
+        console.log("收到:", data); // Debug 用
+
+        if (data.startsWith("LIVE_SCORE:")) {
+            const score = data.split(":")[1];
+            // 加上補零效果 (0 -> 00)
+            document.getElementById('liveScore').innerText = score.padStart(2, '0');
+        }
+        else if (data.startsWith("GAME_OVER_SCORE:")) {
+             const score = data.split(":")[1];
+             document.getElementById('liveScore').style.color = "red"; // 結束變紅字
+        }
+        else if (data === "GAME_START") {
+             document.getElementById('liveScore').style.color = "#00ff00"; // 開始變綠字
+             document.getElementById('liveScore').innerText = "00";
         }
     }
 </script>
-
-</body>
-</html>
